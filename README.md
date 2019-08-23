@@ -7,6 +7,7 @@ Fluent type-safe alternative to JSX for React.
 Source:
 
 ```js
+import React from "react";
 import R from "fluent-react.macro";
 
 const UserProfile = (props: {user: User}) =>

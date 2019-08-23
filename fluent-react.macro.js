@@ -1,8 +1,5 @@
 const { createMacro } = require('babel-plugin-macros');
-
-import _debug from 'debug';
-
-const debug = _debug('fluent-react.macro');
+const debug = require('debug')('fluent-react.macro');
 
 const R = ({ references, state, babel }) => {
   const t = babel.types;
@@ -24,14 +21,17 @@ module.exports = createMacro(R);
 const findParent = nodePath => nodePath.findParent(() => true);
 
 const transformBuilder = (parentPath, target, props, t) => {
-  const newTarget = t.callExpression(t.identifier('createElement'), [
-    target,
-    t.objectExpression(
-      props.map(({ propName, value }) =>
-        t.objectProperty(t.stringLiteral(propName), value)
-      )
-    ),
-  ]);
+  const newTarget = t.callExpression(
+    t.memberExpression(t.identifier('React'), t.identifier('createElement')),
+    [
+      target,
+      t.objectExpression(
+        props.map(({ propName, value }) =>
+          t.objectProperty(t.stringLiteral(propName), value)
+        )
+      ),
+    ]
+  );
   parentPath.replaceWith(newTarget);
 };
 
@@ -88,10 +88,10 @@ const transformReference = (nodePath, i, t, references, processed) => {
       });
       continue;
     } else {
-      throw new Error(`Expected pipe chain to have been terminated with end`);
+      throw new Error(`Expected fluent-react builder chain to have been terminated with end`);
     }
   }
   if (!didEnd) {
-    throw new Error(`Expected pipe chain to have been terminated with end`);
+    throw new Error(`Expected fluent-react builder chain to have been terminated with end`);
   }
 };

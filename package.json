@@ -1,15 +1,15 @@
 {
     "name": "@ts-delight/fluent-react.macro",
-    "version": "0.0.0",
+    "version": "1.0.0-alpha.2",
     "description": "Zero-overhead fluent type-safe alternative to JSX and React.createElement",
-    "main": "if-expr.macro.js",
-    "types": "if-expr.macro.d.ts",
+    "main": "fluent-react.macro.js",
+    "types": "fluent-react.macro.d.ts",
     "scripts": {
         "format": "prettier --write ./**/*.js ./**/*.ts",
         "test": "tsc && jest"
     },
     "publishConfig": {
-	"access": "public"
+        "access": "public"
     },
     "prettier": {
         "printWidth": 80,
