@@ -124,7 +124,7 @@ module.exports = {
 
 ## Caveats
 
-Every fluent builder chain must end with an `.end` invocation without interruptions.
+1. Every fluent builder chain must end with an `.end` invocation without interruptions.
 
 For example:
 
@@ -136,6 +136,8 @@ const result = intermediate.className("large").end();
 Above code will fail to compile.
 
 Because the entire fluent chain is compiled away, anything return by R, or the prop setters, can not be assigned, referenced, or used in any computation.
+
+2. This plugins currently assumes that files are ES6 modules. At the moment, this is not configurable.
 
 ## You may also like:
 

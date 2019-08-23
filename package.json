@@ -33,12 +33,13 @@
         "@types/react": "^16.9.2",
         "@types/react-dom": "^16.9.0",
         "babel-jest": "^24.9.0",
-        "babel-plugin-macros": "^2.6.1",
         "jest": "^24.9.0",
         "prettier": "^1.18.2",
         "typescript": "^3.5.3"
     },
     "dependencies": {
+        "@babel/traverse": "^7.5.5",
+        "babel-plugin-macros": "^2.6.1",
         "debug": "^4.1.1"
     }
 }

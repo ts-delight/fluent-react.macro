@@ -1,9 +1,35 @@
 const { createMacro } = require('babel-plugin-macros');
 const debug = require('debug')('fluent-react.macro');
+const traverse = require('@babel/traverse').default;
 
 const R = ({ references, state, babel }) => {
   const t = babel.types;
   const processed = new Set();
+
+  let createElementNode;
+
+  let identifiers = new Set();
+
+  traverse(state.file.ast, {
+    Identifier(path) {
+      identifiers.add(path.node.name);
+    },
+  });
+
+  const identifier = state.file.path.scope.generateUidIdentifier('React');
+
+  state.file.path.node.body.unshift(
+    t.ImportDeclaration(
+      [t.importNamespaceSpecifier(identifier)],
+      t.stringLiteral('react')
+    )
+  );
+
+  createElementNode = t.memberExpression(
+    identifier,
+    t.identifier('createElement')
+  );
+
   debug('Identified references: ', references.default.length);
   for (let i = 0; i < references.default.length; i++) {
     const nodePath = references.default[i];
@@ -12,7 +38,14 @@ const R = ({ references, state, babel }) => {
       debug('Skipping because already processed');
       continue;
     }
-    transformReference(nodePath, i, t, references, processed);
+    transformReference(
+      nodePath,
+      i,
+      t,
+      references,
+      processed,
+      createElementNode
+    );
   }
 };
 
@@ -20,22 +53,26 @@ module.exports = createMacro(R);
 
 const findParent = nodePath => nodePath.findParent(() => true);
 
-const transformBuilder = (parentPath, target, props, t) => {
-  const newTarget = t.callExpression(
-    t.memberExpression(t.identifier('React'), t.identifier('createElement')),
-    [
-      target,
-      t.objectExpression(
-        props.map(({ propName, value }) =>
-          t.objectProperty(t.stringLiteral(propName), value)
-        )
-      ),
-    ]
-  );
+const transformBuilder = (parentPath, target, props, t, createElementNode) => {
+  const newTarget = t.callExpression(createElementNode, [
+    target,
+    t.objectExpression(
+      props.map(({ propName, value }) =>
+        t.objectProperty(t.stringLiteral(propName), value)
+      )
+    ),
+  ]);
   parentPath.replaceWith(newTarget);
 };
 
-const transformReference = (nodePath, i, t, references, processed) => {
+const transformReference = (
+  nodePath,
+  i,
+  t,
+  references,
+  processed,
+  createElementNode
+) => {
   let parentPath = findParent(nodePath);
   if (parentPath.node.type !== 'CallExpression') {
     throw new Error('Expected R to be called as a function');
@@ -58,7 +95,7 @@ const transformReference = (nodePath, i, t, references, processed) => {
       let args = nextParentPath.node.arguments;
       parentPath = nextParentPath;
       if (propName === 'end' && args.length === 0) {
-        transformBuilder(parentPath, target, props, t);
+        transformBuilder(parentPath, target, props, t, createElementNode);
         didEnd = true;
         debug('Finished processing:', nodePath.node);
         processed.add(nodePath.node);
@@ -76,7 +113,8 @@ const transformReference = (nodePath, i, t, references, processed) => {
             j,
             t,
             references,
-            processed
+            processed,
+            createElementNode
           );
           break;
         }
@@ -88,10 +126,14 @@ const transformReference = (nodePath, i, t, references, processed) => {
       });
       continue;
     } else {
-      throw new Error(`Expected fluent-react builder chain to have been terminated with end`);
+      throw new Error(
+        `Expected fluent-react builder chain to have been terminated with end`
+      );
     }
   }
   if (!didEnd) {
-    throw new Error(`Expected fluent-react builder chain to have been terminated with end`);
+    throw new Error(
+      `Expected fluent-react builder chain to have been terminated with end`
+    );
   }
 };
