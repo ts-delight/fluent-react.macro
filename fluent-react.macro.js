@@ -24,14 +24,17 @@ module.exports = createMacro(R);
 const findParent = nodePath => nodePath.findParent(() => true);
 
 const transformBuilder = (parentPath, target, props, t) => {
-  const newTarget = t.callExpression(t.identifier('createElement'), [
-    target,
-    t.objectExpression(
-      props.map(({ propName, value }) =>
-        t.objectProperty(t.stringLiteral(propName), value)
-      )
-    ),
-  ]);
+  const newTarget = t.callExpression(
+    t.memberExpression(t.identifier('React'), t.identifier('createElement')),
+    [
+      target,
+      t.objectExpression(
+        props.map(({ propName, value }) =>
+          t.objectProperty(t.stringLiteral(propName), value)
+        )
+      ),
+    ]
+  );
   parentPath.replaceWith(newTarget);
 };
 

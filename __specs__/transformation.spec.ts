@@ -10,7 +10,7 @@ test('Transformations', () => {
 
     function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-    const SampleFnComponent = () => createElement('div', {
+    const SampleFnComponent = () => _react.default.createElement('div', {
       \\"id\\": 'container',
       \\"className\\": 'profile-container'
     });
@@ -19,10 +19,10 @@ test('Transformations', () => {
 
     class InnerClassComponent extends _react.default.Component {
       render() {
-        return createElement('div', {
+        return _react.default.createElement('div', {
           \\"id\\": 'container',
           \\"className\\": 'profile-container',
-          \\"children\\": createElement('div', {
+          \\"children\\": _react.default.createElement('div', {
             \\"id\\": 'inner-container',
             \\"children\\": this.props.name
           })
@@ -33,8 +33,8 @@ test('Transformations', () => {
 
     class OuterClassComponent extends _react.default.Component {
       render() {
-        return createElement(_react.default.Fragment, {
-          \\"children\\": [createElement(SampleFnComponent, {}), createElement(InnerClassComponent, {
+        return _react.default.createElement(_react.default.Fragment, {
+          \\"children\\": [_react.default.createElement(SampleFnComponent, {}), _react.default.createElement(InnerClassComponent, {
             \\"name\\": 'Paul'
           })]
         });
@@ -45,16 +45,16 @@ test('Transformations', () => {
     const _sampleCEl = _react.default.createElement(OuterClassComponent);
 
     const SampleComponent1 = p => {
-      return createElement('div', {
+      return _react.default.createElement('div', {
         \\"children\\": p.children
       });
     };
 
     class SampleComponent extends _react.default.Component {
       render() {
-        return createElement(SampleComponent1, {
+        return _react.default.createElement(SampleComponent1, {
           \\"end\\": 'hello',
-          \\"children\\": createElement('div', {})
+          \\"children\\": _react.default.createElement('div', {})
         });
       }
 
