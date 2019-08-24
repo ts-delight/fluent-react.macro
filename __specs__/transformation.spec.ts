@@ -58,6 +58,20 @@ test('Transformations', () => {
         });
       }
 
+    }
+
+    class ComponentWithImplicitChildren extends _React.default.Component {
+      render() {
+        return _React.createElement(SampleComponent1, {
+          \\"end\\": 'hello',
+          \\"children\\": [_React.createElement('div', {
+            \\"id\\": 'bar'
+          }), _React.createElement('div', {
+            \\"className\\": 'foo'
+          })]
+        });
+      }
+
     }"
   `);
 });

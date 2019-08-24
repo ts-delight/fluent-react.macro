@@ -58,3 +58,15 @@ class SampleComponent extends React.Component<SampleProps> {
       .end();
   }
 }
+
+class ComponentWithImplicitChildren extends React.Component<SampleProps> {
+  render() {
+    return R(SampleComponent1)
+      .end('hello')
+      .children([
+        R('div').id('bar'), 
+        R('div').className('foo')
+      ])
+      .end();
+  }
+}

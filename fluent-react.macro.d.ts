@@ -182,7 +182,7 @@ export type PropBuilder<TProps extends {}, TRes> = {
 } &
   ({} extends TProps
     ? {
-        end: () => TRes;
+        end: <TFinalRes = TRes>() => TFinalRes;
       }
     : {});
 
