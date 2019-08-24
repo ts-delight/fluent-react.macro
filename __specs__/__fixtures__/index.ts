@@ -1,5 +1,5 @@
 import React from 'react';
-import R, { PropBuilder } from '../../fluent-react.macro';
+import R from '../../fluent-react.macro';
 
 const SampleFnComponent = () =>
   R('div')

@@ -6,23 +6,23 @@ test('Transformations', () => {
     .toMatchInlineSnapshot(`
     "\\"use strict\\";
 
-    var _react = _interopRequireDefault(require(\\"react\\"));
+    var _React = _interopRequireWildcard(require(\\"react\\"));
 
-    function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+    function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
-    const SampleFnComponent = () => _react.default.createElement('div', {
+    const SampleFnComponent = () => _React.createElement('div', {
       \\"id\\": 'container',
       \\"className\\": 'profile-container'
     });
 
-    const _sampleFnEl = _react.default.createElement(SampleFnComponent);
+    const _sampleFnEl = _React.default.createElement(SampleFnComponent);
 
-    class InnerClassComponent extends _react.default.Component {
+    class InnerClassComponent extends _React.default.Component {
       render() {
-        return _react.default.createElement('div', {
+        return _React.createElement('div', {
           \\"id\\": 'container',
           \\"className\\": 'profile-container',
-          \\"children\\": _react.default.createElement('div', {
+          \\"children\\": _React.createElement('div', {
             \\"id\\": 'inner-container',
             \\"children\\": this.props.name
           })
@@ -31,10 +31,10 @@ test('Transformations', () => {
 
     }
 
-    class OuterClassComponent extends _react.default.Component {
+    class OuterClassComponent extends _React.default.Component {
       render() {
-        return _react.default.createElement(_react.default.Fragment, {
-          \\"children\\": [_react.default.createElement(SampleFnComponent, {}), _react.default.createElement(InnerClassComponent, {
+        return _React.createElement(_React.default.Fragment, {
+          \\"children\\": [_React.createElement(SampleFnComponent, {}), _React.createElement(InnerClassComponent, {
             \\"name\\": 'Paul'
           })]
         });
@@ -42,19 +42,19 @@ test('Transformations', () => {
 
     }
 
-    const _sampleCEl = _react.default.createElement(OuterClassComponent);
+    const _sampleCEl = _React.default.createElement(OuterClassComponent);
 
     const SampleComponent1 = p => {
-      return _react.default.createElement('div', {
+      return _React.createElement('div', {
         \\"children\\": p.children
       });
     };
 
-    class SampleComponent extends _react.default.Component {
+    class SampleComponent extends _React.default.Component {
       render() {
-        return _react.default.createElement(SampleComponent1, {
+        return _React.createElement(SampleComponent1, {
           \\"end\\": 'hello',
-          \\"children\\": _react.default.createElement('div', {})
+          \\"children\\": _React.createElement('div', {})
         });
       }
 
