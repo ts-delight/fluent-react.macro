@@ -7,7 +7,7 @@ Fluent, Terse and Type-safe alternative to JSX for React.
 ```js
 import R from "fluent-react.macro";
 
-// Your component: 
+// Your component:
 const Container = () =>
 
   // Helpers are exposed from top level for all DOM & SVG tags:
@@ -20,7 +20,7 @@ const Container = () =>
       //  |
       //  `- Use setter functions to specify props
 
-  // Equivalent to: 
+  // Equivalent to:
   // <div id="name" />
 
 const UserAvatar = (props: {user: User}) =>
@@ -34,7 +34,7 @@ const UserAvatar = (props: {user: User}) =>
     // As a shorthand children can be passed through the terminating function call
     R.div()
       .className("popover-inner-container")
-      .children(user.name)(),     // <------------|  Of course you can also 
+      .children(user.name)(),     // <------------|  Of course you can also
     R.span().className("arrow")() //              |  use children as a prop
                           //   ^
                           //   |___ For nested components this tailing invocation is
@@ -47,7 +47,7 @@ const UserAvatar = (props: {user: User}) =>
     R.span().className("arrow")
   )
 
-  // Equivalent to: 
+  // Equivalent to:
   // <Popover containerId={user.id}>
   //     <div className="popover-inner-container">
   //         {user.name}
@@ -55,7 +55,7 @@ const UserAvatar = (props: {user: User}) =>
   // </Popover>
 
   // Dynamic attributes can be passed to the factory functions directly:
-  // 
+  //
   // So the above can be written as:
   R(Popover, {containerId: user.id})(
     R.div({className: "popover-inner-container"})(user.name),
@@ -63,9 +63,11 @@ const UserAvatar = (props: {user: User}) =>
   )
 ```
 
-In above snippet when we say equivalent, we don't just mean conceptually equivalent. 
-During build the fluent API is compiled down to the same `React.createElement` invocations as the JSX syntax so
+In above snippet, when we say "equivalent", we don't just mean conceptually equivalent.
+During build, the fluent API is compiled down to the same `React.createElement` invocations as the JSX syntax so
 there is no additional overhead of using this.
+
+See [more examples](https://github.com/ts-delight/fluent-react.macro/blob/master/__specs__/__fixtures__/index.ts).
 
 ## Why ?
 
@@ -158,6 +160,12 @@ Because the entire fluent chain is compiled away, anything returned by R, or the
 
 - **[if-expr.macro](https://github.com/ts-delight/if-expr.macro):** Type-safe expression-oriented alternative to Javascript if statements
 - **[switch-expr.macro](https://github.com/ts-delight/switch-expr.macro):** Type-safe expression-oriented alternative to Javascript switch statements
+
+## Alternatives:
+
+1. [react-hyperscript](https://github.com/mlmorg/react-hyperscript): Encourages some patterns which are not type-safe: eg. `h('h1#heading')`.
+2. [ijk](https://github.com/lukejacksonn/ijk): Terser, but also not type-safe.
+3. [babel-plugin-transform-react-pug](https://github.com/pugjs/babel-plugin-transform-react-pug): Nice indented syntax, also not type-safe.
 
 ## License
 
