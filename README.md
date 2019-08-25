@@ -5,7 +5,7 @@ Fluent, Terse and Type-safe alternative to JSX for React.
 ## Examples
 
 ```js
-import R from "fluent-react.macro";
+import R from "@ts-delight/fluent-react.macro";
 
 // Your component:
 const Container = () =>
@@ -81,9 +81,9 @@ This utility is implemented as a [babel-macro](https://github.com/kentcdodds/bab
 
 Refer babel's [setup instructions](https://babeljs.io/setup) to learn how to setup your project to use [babel](https://babeljs.io) for compilation.
 
-1. Install `babel-plugin-macros` and `fluent-react.macro`:
+1. Install `babel-plugin-macros` and `@ts-delight/fluent-react.macro`:
 
-```js
+```sh
 npm install --save-dev babel-plugin-macros @ts-delight/fluent-react.macro
 ```
 
