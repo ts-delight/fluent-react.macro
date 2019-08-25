@@ -1,65 +1,77 @@
 # About
 
-Fluent type-safe alternative to JSX for React.
+Fluent, Terse and Type-safe alternative to JSX for React.
 
-## Example
-
-Source:
+## Examples
 
 ```js
-import React from "react";
 import R from "fluent-react.macro";
 
-const UserProfile = (props: {user: User}) =>
-    R("div")
-        .id(`user-profile-${props.user.id}`)
-        .className('user-profile-container')
-        .children([
-            R(UserAvatar)
-                .user(props.user)
-                .end(),
-            R("div")
-                .className(`user-name`)
-                .children(props.user.name)
-                .end()
-        ])
-        .end()
+// Your component: 
+const Container = () =>
+
+  // Helpers are exposed from top level for all DOM & SVG tags:
+  // |
+  // V
+  R.div().id("name")()
+      //  ^         ^
+      //  |         |_ | Complete the chain by invoking the last
+      //  |            | part of the chain as a function
+      //  |
+      //  `- Use setter functions to specify props
+
+  // Equivalent to: 
+  // <div id="name" />
+
+const UserAvatar = (props: {user: User}) =>
+
+  //  _ For custom components just call R as a function:
+  // |
+  // |        __ Use similar setter functions for custom component specific props
+  // |       |       (Your IDE will auto-complete them for you)
+  // V       V
+  R(Popover).containerId(user.id)(
+    // As a shorthand children can be passed through the terminating function call
+    R.div()
+      .className("popover-inner-container")
+      .children(user.name)(),     // <------------|  Of course you can also 
+    R.span().className("arrow")() //              |  use children as a prop
+                          //   ^
+                          //   |___ For nested components this tailing invocation is
+                          //        optional
+  );
+
+  // So the above can be more tersely written as:
+  R(Popover).containerId(user.id)(
+    R.div().className("popover-inner-container")(user.name),
+    R.span().className("arrow")
+  )
+
+  // Equivalent to: 
+  // <Popover containerId={user.id}>
+  //     <div className="popover-inner-container">
+  //         {user.name}
+  //     </div>
+  // </Popover>
+
+  // Dynamic attributes can be passed to the factory functions directly:
+  // 
+  // So the above can be written as:
+  R(Popover, {containerId: user.id})(
+    R.div({className: "popover-inner-container"})(user.name),
+    R.span({className: "arrow"})()
+  )
 ```
 
-Equivalent to:
-
-```js
-const UserProfile = (props: {user: User}) =>
-    <div id={`user-profile-${props.user.id}`} className="user-profile-container">
-        <UserAvatar user={props.user} />
-        <div className="user-name">{props.user.name}</div>
-    </div>
-```
-
-Compiled output:
-
-```js
-import {createElement} from 'react';
-
-const UserProfile = (props: {user: User}) =>
-    createElement({
-        id: `user-profile-${props.user.id}`,
-        className: 'user-profile-container',
-        children: [
-            createElement(UserAvatar, {user: props.user }),
-            createElement("div", {className: 'user-name', children: props.user.name })
-        ]
-    })
-
-```
-
-Note that all the extra invocations for setters are simply compiled away, so there is no extra runtime overhead over using React API directly.
+In above snippet when we say equivalent, we don't just mean conceptually equivalent. 
+During build the fluent API is compiled down to the same `React.createElement` invocations as the JSX syntax so
+there is no additional overhead of using this.
 
 ## Why ?
 
-I wanted an XML-free typescript-friendly alternative to JSX that didn't bring in any additional overhead.
+We wanted an XML-free typescript-friendly alternative to JSX that didn't bring in any additional overhead.
 
-I found that using createElement directly results in code that is not quite as readable.
+We found that using createElement directly results in code that is not quite as readable. Also when using createElement directly, the `__source: {fileName, lineNumber}` prop auto-injected by the babel transformer is not present which makes debugging a bit harder.
 
 ## Installation
 
@@ -83,9 +95,9 @@ module.exports = {
     // ... other presets
   ],
   plugins: [
-    'babel-plugin-macros'    // <-- REQUIRED
+    "babel-plugin-macros" // <-- REQUIRED
     // ... other plugins
-  ],
+  ]
 };
 ```
 
@@ -94,9 +106,12 @@ module.exports = {
 ```js
 // src/foo.js
 
-import R from '@ts-delight/fluent-react.macro';
+import R from "@ts-delight/fluent-react.macro";
 
-const Hello = () => R("div").children("hello").end()
+const Hello = () =>
+  R("div")
+    .children("hello")
+    .end();
 ```
 
 ## Usage with TypeScript
@@ -112,13 +127,13 @@ Recommended babel configuration:
 
 module.exports = {
   presets: [
-    '@babel/preset-typescript',
+    "@babel/preset-typescript"
     // ... other presets
   ],
   plugins: [
-    'babel-plugin-macros'
+    "babel-plugin-macros"
     // ... other plugins
-  ],
+  ]
 };
 ```
 
@@ -129,13 +144,13 @@ module.exports = {
 For example:
 
 ```js
-const intermediate = R("div").id("container");
-const result = intermediate.className("large").end();
+const intermediate = R.div().id("container");
+const result = intermediate.className("large")();
 ```
 
 Above code will fail to compile.
 
-Because the entire fluent chain is compiled away, anything return by R, or the prop setters, can not be assigned, referenced, or used in any computation.
+Because the entire fluent chain is compiled away, anything returned by R, or the prop setters, can not be assigned, referenced, or used in any computation.
 
 2. This plugins currently assumes that files are ES6 modules. At the moment, this is not configurable.
 

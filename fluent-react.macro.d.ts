@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { type } from 'os';
 
 interface HTMLElementsRegistry {
   a: HTMLAnchorElement;
@@ -180,11 +181,13 @@ export type PropBuilder<TProps extends {}, TRes> = {
     v: V
   ) => PropBuilder<Omit<TProps, K>, TRes>);
 } &
-  ({} extends TProps
-    ? {
-        end: <TFinalRes = TRes>() => TFinalRes;
-      }
-    : {});
+  ({} extends TProps ? ChainTerminator<TProps, TRes> : {});
+
+type ChainTerminator<TProps, TRes> = TProps extends { children?: any }
+  ? {
+      (...children: CastArray<ChildrenOf<TProps>>): TRes;
+    }
+  : (() => TRes);
 
 type ElementFor<
   TRegistry extends {},
@@ -216,54 +219,71 @@ type HTMLAttributesOf<TKey extends keyof React.ReactHTML> = AttributesOf<
   React.HTMLAttributes<HTMLElementFor<TKey>>
 >;
 
-interface ReactFluentBuilder {
-  // DOM Element:
+type PropsOf<TType> = TType extends keyof React.ReactHTML
+  ? React.ClassAttributes<HTMLElementFor<TType>> & HTMLAttributesOf<TType>
+  : TType extends keyof React.ReactSVG
+  ? React.ClassAttributes<SVGElementFor<TType>>
+  : TType extends string
+  ? React.Attributes
+  : TType extends React.FunctionComponent<infer P>
+  ? P & React.Attributes
+  : TType extends React.ClassType<infer P, infer T, infer C>
+  ? React.ClassAttributes<T> & P
+  : TType extends React.ComponentClass<infer P>
+  ? React.Attributes & P
+  : React.Attributes;
 
-  <P extends HTMLAttributesOf<K>, K extends keyof React.ReactHTML>(
-    type: K
-  ): PropBuilder<
-    React.ClassAttributes<HTMLElementFor<K>> & P,
-    React.DetailedReactHTMLElement<P, HTMLElementFor<K>>
-  >;
-  <
-    P extends React.SVGAttributes<SVGElementFor<K>>,
-    K extends keyof React.ReactSVG
-  >(
-    type: K
-  ): PropBuilder<
-    React.ClassAttributes<SVGElementFor<K>> & P,
-    React.ReactSVGElement
-  >;
-  <P extends React.DOMAttributes<T>, T extends Element>(
-    type: string
-  ): PropBuilder<React.ClassAttributes<T> & P, React.DOMElement<P, T>>;
+type ElementOf<TType, P> = TType extends keyof React.ReactHTML
+  ? React.DetailedReactHTMLElement<P, HTMLElementFor<TType>>
+  : TType extends keyof React.ReactSVG
+  ? React.ReactSVGElement
+  : TType extends string
+  ? React.DOMElement<P, TType>
+  : TType extends React.FunctionComponent<infer P>
+  ? React.FunctionComponentElement<P>
+  : TType extends React.ClassType<P, infer T, infer C>
+  ? React.CElement<P, T>
+  : TType extends React.ComponentClass<P>
+  ? React.ReactElement<P>
+  : never;
 
-  // Custom Components:
-  <P extends {}>(type: React.FunctionComponent<P>): PropBuilder<
-    React.Attributes & P,
-    React.FunctionComponentElement<P>
-  >;
-  <P extends {}>(
-    type: React.ClassType<
-      P,
-      React.ClassicComponent<P, React.ComponentState>,
-      React.ClassicComponentClass<P>
-    >
-  ): PropBuilder<
-    React.ClassAttributes<React.ClassicComponent<P, React.ComponentState>> & P,
-    React.CElement<P, React.ClassicComponent<P, React.ComponentState>>
-  >;
-  <
-    P extends {},
-    T extends React.Component<P, React.ComponentState>,
-    C extends React.ComponentClass<P>
+type Diff<T, U> = T extends U ? never : T;
+
+type CastArray<T> = T extends (infer I)[] ? T : T[];
+
+type ChildrenOf<P> = P extends { children?: any }
+  ? Diff<P['children'], null | undefined>
+  : never;
+
+type DomBuilderHelpers$1 = {
+  [T in keyof React.ReactHTML | keyof React.ReactSVG]: <
+    TExtraProps extends {} = {},
+    A extends Partial<PropsOf<T> & TExtraProps> = {}
   >(
-    type: React.ClassType<P, T, C>
-  ): PropBuilder<React.ClassAttributes<T> & P, React.ClassType<P, T, C>>;
-  <P extends {}>(
-    type: React.FunctionComponent<P> | React.ComponentClass<P> | string
-  ): PropBuilder<React.Attributes & P, React.ReactElement<P>>;
+    attrs?: A
+  ) => PropBuilder<
+    Omit<PropsOf<T> & TExtraProps, keyof A>,
+    ElementOf<T, PropsOf<T>>
+  >;
+};
+
+interface DomBuilderHelpers extends DomBuilderHelpers$1 {}
+
+interface PrimaryBuilder {
+  <
+    T,
+    TExtraProps extends {} = {},
+    A extends Partial<PropsOf<T> & TExtraProps> = {}
+  >(
+    type: T,
+    attrs?: A
+  ): PropBuilder<
+    Omit<PropsOf<T> & TExtraProps, keyof A>,
+    ElementOf<T, PropsOf<T>>
+  >;
 }
+
+interface ReactFluentBuilder extends PrimaryBuilder, DomBuilderHelpers {}
 
 declare const R: ReactFluentBuilder;
 

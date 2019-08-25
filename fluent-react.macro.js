@@ -1,11 +1,24 @@
 const { createMacro } = require('babel-plugin-macros');
 const debug = require('debug')('fluent-react.macro');
 const { codeFrameColumns } = require('@babel/code-frame');
+const pkgDir = require('pkg-dir');
+const path = require('path');
+const normalizePath = require('normalize-path');
 
 const pkgName = 'fluent-react.macro';
 
 const R = ({ references, state, babel }) => {
   debug('Initial state:', state);
+
+  // Find the fileName to inject into createElement invocations
+  let fileName = state.filename;
+  if (fileName) {
+    const rootDir = pkgDir.sync(fileName);
+    if (rootDir) {
+      fileName = path.relative(rootDir, fileName);
+    }
+    fileName = normalizePath(fileName);
+  }
 
   // Utilities to help with ast construction
   const t = babel.types;
@@ -25,18 +38,12 @@ const R = ({ references, state, babel }) => {
   const injectPrimaryReactImport = () => {
     debug('Injecting react namespace import. Local identifier: ', identifier);
     state.file.path.node.body.unshift(
-      t.ImportDeclaration(
-        [t.importNamespaceSpecifier(identifier)],
-        t.stringLiteral('react')
-      )
+      t.ImportDeclaration([t.importNamespaceSpecifier(identifier)], t.stringLiteral('react'))
     );
   };
 
   // Generate AST for React.createElement
-  const createElementNode = t.memberExpression(
-    identifier,
-    t.identifier('createElement')
-  );
+  const createElementNode = t.memberExpression(identifier, t.identifier('createElement'));
 
   // Validate References of this macro
   const validateRefs = () => {
@@ -47,9 +54,7 @@ const R = ({ references, state, babel }) => {
 
     if (invalidRefKeys.length > 0) {
       // Something else was imported from this package
-      throw new Error(
-        `Invalid import(s) from ${pkgName}: ${invalidRefKeys.join(', ')}`
-      );
+      throw new Error(`Invalid import(s) from ${pkgName}: ${invalidRefKeys.join(', ')}`);
     }
 
     if (
@@ -57,10 +62,9 @@ const R = ({ references, state, babel }) => {
       !references.default ||
       // Nothing done with the default import:
       references.default.length === 0
-    )
-      throw new Error(
-        `${pkgName} was imported but never used. You can remove the import to fix this error`
-      );
+    ) {
+      throw new Error(`${pkgName} was imported but never used. You can remove the import to fix this error`);
+    }
   };
 
   // Find immediate parent
@@ -75,36 +79,63 @@ const R = ({ references, state, babel }) => {
   // Transform the fluent builder chain
   const transformBuilder = (parentPath, target, props) => {
     debug('Transforming fluent builder chain', parentPath.node);
+    const sourceProperties = [];
+    if (fileName) {
+      sourceProperties.push(
+        t.objectProperty(
+          t.identifier('fileName'),
+          t.stringLiteral(fileName)
+        )
+      );
+    }
+    if (parentPath.node.loc) {
+      sourceProperties.push(t.objectProperty(
+        t.identifier('lineNumber'),
+        t.numericLiteral(parentPath.node.loc.start.line)
+      ))
+    }
+    if (Object.keys(sourceProperties).length > 0) {
+      props.push({
+        propName: '__source',
+        value: t.objectExpression(sourceProperties)
+      });
+    }
     const newTarget = t.callExpression(createElementNode, [
       target,
       t.objectExpression(
-        props.map(({ propName, value }) =>
-          t.objectProperty(t.stringLiteral(propName), value)
-        )
+        props.map(({ propName, value, spreadable }) => {
+          if (spreadable) {
+            return t.spreadElement(spreadable);
+          }
+          return t.objectProperty(t.stringLiteral(propName), value);
+        })
       ),
     ]);
     parentPath.replaceWith(newTarget);
   };
 
   // Validating the beginning of a fluent chain
-  const validateChainHead = nodePath => {
+  const getChainTarget = nodePath => {
     const refNode = nodePath.node;
     let parentPath = findParent(nodePath);
-    if (parentPath.node.type !== 'CallExpression') {
-      failWith(
-        1,
-        refNode,
-        `Expected ${refNode.name} to be called as a function`
-      );
+    if (t.isCallExpression(parentPath.node) && parentPath.node.callee === nodePath.node) {
+      const args = parentPath.node.arguments;
+      if (args.length === 0 || args.length > 3) {
+        failWith(2, refNode, `Expected ${refNode.name} to have been called with 1-3 argument`);
+      }
+      return {
+        target: args[0],
+        parentPath,
+        propArgIdx: 1
+      };
+    } else if (t.isMemberExpression(parentPath.node) && parentPath.node.object === refNode) {
+      return {
+        target: t.stringLiteral(parentPath.node.property.name),
+        parentPath: findParent(parentPath),
+        propArgIdx: 0
+      };
     }
-    const args = parentPath.node.arguments;
-    if (args.length !== 1) {
-      failWith(
-        2,
-        refNode,
-        `Expected ${refNode.name} to have been called with single argument`
-      );
-    }
+    failWith(1, refNode, `Expected ${refNode.name} to be invoked`);
   };
 
   // Process a subset of identified references in sequence
@@ -120,24 +151,14 @@ const R = ({ references, state, babel }) => {
     }
   };
 
-  const processChainMemberExpression = (
-    parentPath,
-    nodePath,
-    i,
-    target,
-    props
-  ) => {
+  const processChainMemberExpression = (parentPath, nodePath, refIdx, target, props) => {
     const propName = parentPath.node.property.name;
     const nextParentPath = findParent(parentPath);
-    if (nextParentPath.node.type !== 'CallExpression') {
+    if (!t.isCallExpression(nextParentPath.node)) {
       // Allowing usage of imported reference in anything other
       // than direct invocation (eg. reassignment to some different variable etc.)
       // requires a lot of edge case handling - so we simply bail with an error
-      failWith(
-        3,
-        nextParentPath.node,
-        `Expected ${propName} to be invoked as a function`
-      );
+      failWith(3, nextParentPath.node, `Expected ${propName} to be invoked as a function`);
     }
     let args = nextParentPath.node.arguments;
     parentPath = nextParentPath;
@@ -152,25 +173,19 @@ const R = ({ references, state, babel }) => {
       processed.add(nodePath.node);
       return null;
     }
-    if (args.length !== 1) {
+
+    if (args.length !== 1 && propName !== 'children') {
       // A prop setter should receive exactly one argument
-      failWith(
-        4,
-        nextParentPath.node,
-        `Expected ${propName} to be invoked with a single argument`
-      );
+      failWith(4, nextParentPath.node, `Expected ${propName} to be invoked with a single argument`);
     }
-    const isChildNodeOfArg = (path) => path.findParent(p => p.node === args[0]);
-  
+    const isChildNodeOfArg = path => path.findParent(p => p.node === args[0]);
+
     // Ensure that the nodes that we are relocating
     // have already been processed.
     //
     // If this is not done then macro invocations nested inside
     // arguments will get left out in processing.
-    processReferences(
-      i + 1,
-      path => isPending(path) && isChildNodeOfArg(path)
-    );
+    processReferences(refIdx + 1, path => isPending(path) && isChildNodeOfArg(path));
 
     // Reassign because references may have been changed in AST
     args = nextParentPath.node.arguments;
@@ -179,39 +194,56 @@ const R = ({ references, state, babel }) => {
       propName,
       value: args[0],
     });
-
     return parentPath;
   };
 
   // Transform a single macro reference
   const transformReference = (nodePath, refIdx, autoTerminate = false) => {
-    let parentPath = findParent(nodePath);
-    validateChainHead(nodePath);
-    const target = parentPath.node.arguments[0];
+    let { target, parentPath, propArgIdx } = getChainTarget(nodePath);
     const props = [];
+
+    if (parentPath.node.arguments[propArgIdx]) {
+      const preSpecifiedProps = parentPath.node.arguments[propArgIdx];
+      props.push({ spreadable: preSpecifiedProps });
+    }
+
     while (true) {
       let nextParentPath = findParent(parentPath);
-      if (nextParentPath.node.type === 'MemberExpression') {
-        parentPath = processChainMemberExpression(
-          nextParentPath,
-          nodePath,
-          refIdx,
-          target,
-          props
-        );
+      if (t.isMemberExpression(nextParentPath.node) && nextParentPath.node.object === parentPath.node) {
+        parentPath = processChainMemberExpression(nextParentPath, nodePath, refIdx, target, props);
         if (parentPath === null) break;
         continue;
-      } else if (autoTerminate) {
+      }
+      if (t.isCallExpression(nextParentPath.node) && nextParentPath.node.callee === parentPath.node) {
+        let args = nextParentPath.node.arguments;
+        if (args.length > 0) {
+          for (const arg of args) {
+            const isChildNodeOfArg = path => path.findParent(p => p.node === arg);
+            processReferences(refIdx + 1, path => isPending(path) && isChildNodeOfArg(path));
+          }
+          args = nextParentPath.node.arguments;
+          if (args.length === 1) {
+            props.push({
+              propName: 'children',
+              value: args[0],
+            });
+          } else {
+            props.push({
+              propName: 'children',
+              value: t.arrayExpression(args),
+            });
+          }
+        }
+        transformBuilder(nextParentPath, target, props);
+        processed.add(nodePath.node);
+        break;
+      }
+      if (autoTerminate) {
         transformBuilder(parentPath, target, props);
         processed.add(nodePath.node);
         break;
-      } else {
-        failWith(
-          5,
-          parentPath.node,
-          `Expected fluent-react builder chain to have been terminated with end`
-        );
       }
+      failWith(5, parentPath.node, `Expected fluent-react builder chain to have been terminated with end`);
     }
   };
 
