@@ -139,12 +139,12 @@ const R = ({ references, state, babel }) => {
   };
 
   // Process a subset of identified references in sequence
-  const processReferences = (startIndex = 0, predicate = isPending) => {
+  const processReferences = (startIndex = 0, predicate = isPending, autoTerminate = false) => {
     for (let refIdx = startIndex; refIdx < references.default.length; refIdx++) {
       const nodePath = references.default[refIdx];
       if (predicate(nodePath)) {
         debug('Processing reference', refIdx, nodePath.node);
-        transformReference(nodePath, refIdx, true);
+        transformReference(nodePath, refIdx, autoTerminate);
       } else {
         debug('Ignoring reference due to predicate mismatch', refIdx, nodePath.node);
       }
@@ -185,7 +185,7 @@ const R = ({ references, state, babel }) => {
     //
     // If this is not done then macro invocations nested inside
     // arguments will get left out in processing.
-    processReferences(refIdx + 1, path => isPending(path) && isChildNodeOfArg(path));
+    processReferences(refIdx + 1, path => isPending(path) && isChildNodeOfArg(path), true);
 
     // Reassign because references may have been changed in AST
     args = nextParentPath.node.arguments;
@@ -219,7 +219,7 @@ const R = ({ references, state, babel }) => {
         if (args.length > 0) {
           for (const arg of args) {
             const isChildNodeOfArg = path => path.findParent(p => p.node === arg);
-            processReferences(refIdx + 1, path => isPending(path) && isChildNodeOfArg(path));
+            processReferences(refIdx + 1, path => isPending(path) && isChildNodeOfArg(path), true);
           }
           args = nextParentPath.node.arguments;
           if (args.length === 1) {
