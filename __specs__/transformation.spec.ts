@@ -10,14 +10,14 @@ test("Transformations", () => {
 
     function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
-    // Usage of DOM Helpers: 
+    // Usage of DOM Helpers:
     const C1 = () => _React.createElement(\\"div\\", {
       \\"className\\": 'hello',
       \\"__source\\": {
         fileName: \\"__specs__/__fixtures__/index.ts\\",
         lineNumber: 6
       }
-    }); // Nesting with helpers: 
+    }); // Nesting with helpers:
 
 
     const C2 = () => _React.createElement(\\"div\\", {
@@ -268,6 +268,24 @@ test("Transformations", () => {
       \\"__source\\": {
         fileName: \\"__specs__/__fixtures__/index.ts\\",
         lineNumber: 96
+      }
+    });
+
+    const Popover = null;
+    const Button = null;
+
+    _React.createElement(Popover, {
+      \\"content\\": \\"foo\\",
+      \\"children\\": _React.createElement(Button, {
+        \\"icon\\": 'more',
+        \\"__source\\": {
+          fileName: \\"__specs__/__fixtures__/index.ts\\",
+          lineNumber: 118
+        }
+      }),
+      \\"__source\\": {
+        fileName: \\"__specs__/__fixtures__/index.ts\\",
+        lineNumber: 116
       }
     });"
   `);
