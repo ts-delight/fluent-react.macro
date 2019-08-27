@@ -1,6 +1,6 @@
 {
     "name": "@ts-delight/fluent-react.macro",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "Zero-overhead fluent type-safe alternative to JSX and React.createElement",
     "main": "fluent-react.macro.js",
     "types": "fluent-react.macro.d.ts",
