@@ -1,6 +1,6 @@
 # About
 
-Fluent, Terse and Type-safe alternative to JSX for React.
+[Fluent](https://en.wikipedia.org/wiki/Fluent_interface), Terse and Type-safe alternative to [JSX](https://reactjs.org/docs/introducing-jsx.html) for [React](https://reactjs.org).
 
 ## Examples
 
@@ -37,7 +37,7 @@ const UserAvatar = (props: {user: User}) =>
       .children(user.name)(),     // <------------|  Of course you can also
     R.span().className("arrow")() //              |  use children as a prop
                           //   ^
-                          //   |___ For nested components this tailing invocation is
+                          //   |___ For immediately nested components this tailing invocation is
                           //        optional
   );
 
@@ -111,9 +111,7 @@ module.exports = {
 import R from "@ts-delight/fluent-react.macro";
 
 const Hello = () =>
-  R("div")
-    .children("hello")
-    .end();
+  R.div()("hello");
 ```
 
 ## Usage with TypeScript
@@ -141,7 +139,7 @@ module.exports = {
 
 ## Caveats
 
-1. Every fluent builder chain must end with an `.end` invocation without interruptions.
+1. Every fluent builder chain must end with a tailing invocation without interruptions.
 
 For example:
 
